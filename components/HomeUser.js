@@ -16,6 +16,12 @@ export default function HomeUser({navigation, route}){
       >
         <Text style={stylesHome.buttonText2}>Rentas</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={stylesHome.button2}
+        onPress={() => navigation.navigate('Devolucion')}
+      >
+        <Text style={stylesHome.buttonText2}>Regresar vehiculo</Text>
+      </TouchableOpacity>
     </View>
     )
 }

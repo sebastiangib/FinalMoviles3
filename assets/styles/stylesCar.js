@@ -35,9 +35,16 @@ titleLista: {
   marginTop: 20
 },
   button: {
-    marginTop: 20
+    marginTop: 20,
+    backgroundColor: 'green'
   },
   listacarros: {
     fontSize: 14,
+  },
+  buttonEliminar:{
+    backgroundColor: 'red'
+  },
+  buttonEditar:{
+    backgroundColor: 'blue'
   }
 });

@@ -60,21 +60,21 @@ export default function CarScreen() {
       setEditarVisible(false);
       if (vehiculoSeleccionado) {
         try {
-          const vehiculoRef = doc(db, "vehiculos", vehiculoSeleccionado.id);
+          const vehiculoRef = doc(db, 'vehiculos', vehiculoSeleccionado.id);
           await updateDoc(vehiculoRef, {
             numeroPlaca: vehiculoSeleccionado.numeroPlaca,
             marca: vehiculoSeleccionado.marca,
-            disponible: vehiculoSeleccionado.disponible,
+            disponible: vehiculoSeleccionado.disponible, // Asegúrate de que este valor refleje la disponibilidad actualizada
           });
           // Realizar una nueva consulta a la base de datos para actualizar los vehículos
-          const vehiculosSnapshot = await getDocs(collection(db, "vehiculos"));
+          const vehiculosSnapshot = await getDocs(collection(db, 'vehiculos'));
           const vehiculosData = vehiculosSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }));
           setVehiculos(vehiculosData);
         } catch (error) {
-          console.error("Error al actualizar el vehículo:", error);
+          console.error('Error al actualizar el vehículo:', error);
         }
       }
       setVehiculoSeleccionado(null);
@@ -110,6 +110,21 @@ export default function CarScreen() {
   }, []);
   
 
+  const actualizarEstadoVehiculo = async (id) => {
+    try {
+      const vehiculoRef = doc(db, "vehiculos", id);
+      await updateDoc(vehiculoRef, { disponible: false });
+      // Vuelve a cargar la lista después de actualizar el vehículo
+      const vehiculosSnapshot = await getDocs(collection(db, "vehiculos"));
+      const vehiculosData = vehiculosSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setVehiculos(vehiculosData);
+    } catch (error) {
+      console.error("Error al actualizar el estado del vehículo:", error);
+    }
+  };
   return (
     <View style={stylesCar.container}>
       <Avatar.Image
@@ -180,8 +195,8 @@ export default function CarScreen() {
   data={vehiculos}
   keyExtractor={(item) => item.id}
   renderItem={({ item }) => (
-    <View style={stylesCar.itemContainer}>
-      <View style={stylesCar.itemDetails}>
+    <View>
+      <View style={{textAlign: 'left'}}>
         <Text style={stylesCar.listacarros}>
           {`Placa: ${item.numeroPlaca}, Marca: ${
             item.marca
@@ -190,9 +205,11 @@ export default function CarScreen() {
           }`}
         </Text>
       </View>
+      <View style={{flexDirection:'row', justifyContent: 'center', alignItems: 'center', textAlign: 'center'}}>
       <Button
         onPress={() => eliminarVehiculo(item.id)}
         mode="contained"
+        icon="delete"
         style={stylesCar.buttonEliminar}
       >
         Eliminar
@@ -200,10 +217,12 @@ export default function CarScreen() {
       <Button
               onPress={() => abrirEditor(item)}
               mode="contained"
+              icon="pencil"
               style={stylesCar.buttonEditar}
             >
               Editar
             </Button>
+    </View>
     </View>
   )}
 />

@@ -51,7 +51,7 @@ export default function LoginScreen({ navigation }) {
           borderWidth: 2,
           borderColor: "gray",
           borderRadius: 10,
-          padding: 50,
+          padding: 30,
         }}
       >
         <TextInput

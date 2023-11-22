@@ -1,132 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button,Picker } from 'react-native';
-import { getFirestore, collection, getDocs, query, where, updateDoc, doc, addDoc } from 'firebase/firestore';
-import { firebaseConfig } from '../firebaseConfig';
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { TextInput, Button, View, Picker, Text } from 'react-native';
+import { getFirestore, collection, getDocs, addDoc } from 'firebase/firestore';
+import { devolucionStyles } from '../assets/styles/devolucion';
 
 export default function RentScreen() {
-  const [alquiler, setAlquiler] = useState({
-    numeroPlaca: '',
-    fechaInicial: '',
-    fechaFinal: '',
-    numeroRenta: '',
-  });
-  const [message, setMessage] = useState('');
-  const [messageColor, setMessageColor] = useState(true);
-  const [carros, setCarros] = useState([]);
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore();
-
-  const auth = getAuth(app);
+  const [vehiculosDisponibles, setVehiculosDisponibles] = useState([]);
+  const [fechaInicial, setFechaInicial] = useState('');
+  const [fechaFinal, setFechaFinal] = useState('');
+  const [numeroRenta, setNumeroRenta] = useState('');
+  const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState({});
 
   useEffect(() => {
-    const fetchCarros = async () => {
+    const db = getFirestore();
+    const fetchVehiculosDisponibles = async () => {
       try {
-        const carrosSnapshot = await getDocs(collection(db, 'vehiculos'));
-        const carrosData = carrosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        console.log('Carros Data:', carrosData);
-        setCarros(carrosData);
+        const vehiculosSnapshot = await getDocs(collection(db, 'vehiculos'));
+        const vehiculosData = vehiculosSnapshot.docs
+          .filter((doc) => doc.data().disponible)
+          .map((doc) => ({
+            id: doc.id,
+            numeroPlaca: doc.data().numeroPlaca,
+          }));
+        setVehiculosDisponibles(vehiculosData);
       } catch (error) {
-        console.error('Error fetching cars:', error);
+        console.error('Error al cargar vehículos disponibles:', error);
       }
     };
-  
-    fetchCarros();
+
+    fetchVehiculosDisponibles();
   }, []);
 
   const guardarAlquiler = async () => {
-    console.log('Vehículos:', carros); // Verifica que los vehículos estén presentes
-  console.log('Numero Placa:', alquiler.numeroPlaca); // Verifica el valor de numeroPlaca
-
-    const fechaActual = Date.now();
-    const fechaInicial = Date.parse(alquiler.fechaInicial);
+    console.log('vehiculoSeleccionado:', vehiculoSeleccionado);
+    console.log('fechaInicial:', fechaInicial);
+    console.log('fechaFinal:', fechaFinal);
+    console.log('numeroRenta:', numeroRenta);
   
-    if (fechaInicial < fechaActual) {
-      setMessage('La fecha inicial no puede ser menor que la fecha del sistema.');
-      setMessageColor(false);
+    if (!vehiculoSeleccionado || !fechaInicial || !fechaFinal || !numeroRenta) {
+      console.error('Por favor completa todos los campos.');
       return;
     }
-  
+
+    const db = getFirestore();
     try {
-      const carroSeleccionado = carros.find((carro) => carro.id === alquiler.numeroPlaca);
-      const nuevoAlquiler = {
-        fechaInicial: alquiler.fechaInicial,
-        fechaFinal: alquiler.fechaFinal,
-        numeroRenta: alquiler.numeroRenta,
-        numeroPlaca: alquiler.numeroPlaca,
+      // Objeto con los detalles del alquiler
+      const alquiler = {
+        vehiculoId: vehiculoSeleccionado,
+        fechaInicial,
+        fechaFinal,
+        numeroRenta,
       };
-  
-      await addDoc(collection(db, 'alquileres'), nuevoAlquiler);
-  
-      if (carroSeleccionado) {
-  await updateDoc(doc(db, 'vehiculos', carroSeleccionado.id), { disponible: false });
 
-  setMessageColor(true);
-  setMessage('Alquiler guardado correctamente.');
-  setAlquiler({
-    fechaInicial: '',
-    fechaFinal: '',
-    numeroRenta: '',
-    numeroPlaca: '',
-  });
+      // Agregar el objeto a la colección 'alquileres'
+      await addDoc(collection(db, 'alquileres'), alquiler);
+ // Actualizar el estado del vehículo seleccionado a No Disponible
+ await actualizarEstadoVehiculo(vehiculoSeleccionado.id);
 
-  // Volver a cargar la lista de vehículos disponibles después de guardar el alquiler
-  fetchCarros();
-} else {
-  setMessageColor(false);
-  setMessage('No se encontró el vehículo seleccionado.');
+ console.log('Alquiler guardado exitosamente.');
+
+// Reiniciar los campos de entrada
+setFechaInicial('');
+setFechaFinal('');
+setNumeroRenta('');
+setVehiculoSeleccionado(null);
+} catch (error) {
+console.error('Error al guardar el alquiler:', error);
 }
+  }
+
+  const actualizarEstadoVehiculo = async (id) => {
+    try {
+      const vehiculoRef = doc(db, 'vehiculos', id);
+      await updateDoc(vehiculoRef, { disponible: false });
+      // Vuelve a cargar la lista después de actualizar el vehículo
+      const vehiculosSnapshot = await getDocs(collection(db, 'vehiculos'));
+      const vehiculosData = vehiculosSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setVehiculosDisponibles(vehiculosData);
     } catch (error) {
-      setMessageColor(false);
-      setMessage('Error al guardar el alquiler.');
-      console.error('Error:', error);
+      console.error('Error al actualizar el estado del vehículo:', error);
     }
   };
-  
+
+
   return (
-    <View style={{ padding: 20 }}>
-    <View style={{ marginTop: 10 }}>
-      <Text>Vehículos Disponibles:</Text>
+    <View style={devolucionStyles.container}>
+      <View
+        style={{
+          borderWidth: 2,
+          borderColor: "gray",
+          borderRadius: 10,
+          padding: 30,
+        }}
+      >
+      <Text>Fecha Inicial</Text>
+      <TextInput value={fechaInicial} onChangeText={setFechaInicial} />
+
+      <Text>Fecha Final</Text>
+      <TextInput value={fechaFinal} onChangeText={setFechaFinal} />
+
+      <Text>Numero de Renta</Text>
+      <TextInput value={numeroRenta} onChangeText={setNumeroRenta} />
+
+      {/* Dropdown de vehículos disponibles */}
       <Picker
-  selectedValue={alquiler.numeroPlaca}
-  onValueChange={(itemValue) => setAlquiler({ ...alquiler, numeroPlaca: itemValue })}
+  selectedValue={vehiculoSeleccionado ? vehiculoSeleccionado.id : ''}
+  onValueChange={async (itemValue) => {
+    const selectedVehicle = vehiculosDisponibles.find(
+      (vehiculo) => vehiculo.id === itemValue
+    );
+    setVehiculoSeleccionado(selectedVehicle || {});
+
+    // Actualizar el estado de disponibilidad del vehículo seleccionado
+    await actualizarEstadoVehiculo(itemValue);
+  }}
 >
-  {carros.map((carro) => {
-    if (carro.disponible) {
-      return (
-        <Picker.Item key={carro.id} label={carro.numeroPlaca} value={carro.id} />
-        // Utiliza 'value={carro.id}' en lugar de 'value={carro.numeroPlaca}'
-      );
-    } else {
-      return null;
-    }
-  })}
+  {/* Agrega una opción por defecto */}
+  <Picker.Item label="Seleccione un vehículo" value="" />
+
+  {vehiculosDisponibles.map((vehiculo) => (
+    <Picker.Item
+      key={vehiculo.id}
+      label={vehiculo.numeroPlaca}
+      value={vehiculo.id}
+    />
+  ))}
 </Picker>
+
+      <Button title="Guardar" onPress={guardarAlquiler} />
     </View>
-
-    <Text>Fecha Inicial</Text>
-    <TextInput
-      value={alquiler.fechaInicial}
-      onChangeText={(text) => setAlquiler({ ...alquiler, fechaInicial: text })}
-    />
-
-    <Text>Fecha Final</Text>
-    <TextInput
-      value={alquiler.fechaFinal}
-      onChangeText={(text) => setAlquiler({ ...alquiler, fechaFinal: text })}
-    />
-
-    <Text>Numero de Renta</Text>
-    <TextInput
-      value={alquiler.numeroRenta}
-      onChangeText={(text) => setAlquiler({ ...alquiler, numeroRenta: text })}
-    />
-
-    <Button title="Guardar" onPress={guardarAlquiler} />
-
-    <Text style={{ marginTop: 10, color: messageColor ? 'green' : 'red' }}>{message}</Text>
-  </View>
+    </View>
   );
 }

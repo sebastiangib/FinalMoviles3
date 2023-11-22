@@ -7,6 +7,7 @@ import ForgotPassword from './components/ForgotPassword';
 import CarScreen from './components/CarScreen';
 import RentScreen from './components/RentScreen';
 import HomeUser from './components/HomeUser';
+import DevolucionScreen from './components/DevolucionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -23,6 +24,7 @@ export default function App() {
         <Stack.Screen name="Car" component={CarScreen} options={{title:"Vehiculos"}}/>
         <Stack.Screen name="Rent" component={RentScreen} options={{title:"Rentas"}}/>
         <Stack.Screen name="HomeUser" component={HomeUser} options={{title:"Inicio"}}/>
+        <Stack.Screen name="Devolucion" component={DevolucionScreen} options={{title:"Devolucion de Vehiculos"}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
